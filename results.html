@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraping Results - IntelliScrape AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <a href="{% url 'scraper:home' %}" class="text-indigo-600 hover:text-indigo-800">← Back to Home</a>
+        </div>
+
+        <!-- Job Details -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h1 class="text-2xl font-bold mb-4">Job Details</h1>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-gray-600">URL:</p>
+                    <p class="font-medium">{{ job.url }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Status:</p>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        {% if job.status == 'COMPLETED' %}bg-green-100 text-green-800
+                        {% elif job.status == 'FAILED' %}bg-red-100 text-red-800
+                        {% elif job.status == 'IN_PROGRESS' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ job.status }}
+                    </span>
+                </div>
+                <div>
+                    <p class="text-gray-600">Started:</p>
+                    <p>{{ job.created_at|date:"M d, Y H:i:s" }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Completed:</p>
+                    <p>{{ job.completed_at|date:"M d, Y H:i:s"|default:"--" }}</p>
+                </div>
+            </div>
+            {% if job.error_message %}
+            <div class="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+                <p class="font-medium">Error:</p>
+                <p>{{ job.error_message }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Website Endpoints -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Discovered Endpoints</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for endpoint in job.endpoints.all %}
+                <div class="p-3 bg-gray-50 rounded-md">
+                    <p class="font-medium text-indigo-600">{{ endpoint.endpoint_name }}</p>
+                    <p class="text-sm text-gray-600 truncate">{{ endpoint.path }}</p>
+                    <a href="{{ endpoint.url }}" target="_blank" 
+                       class="text-sm text-gray-500 hover:text-indigo-600">
+                        Visit →
+                    </a>
+                </div>
+                {% empty %}
+                <p class="text-center text-gray-500 col-span-2">No endpoints discovered yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Scraped Contents -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Scraped Contents</h2>
+            {% for content in scraped_contents %}
+            <div class="border-b border-gray-200 py-4 {% if not forloop.last %}mb-4{% endif %}">
+                <p class="text-sm text-gray-600 mb-2">{{ content.scraped_at|date:"M d, Y H:i:s" }}</p>
+                <p class="text-indigo-600 hover:text-indigo-800 mb-2">
+                    <a href="{{ content.url }}" target="_blank">{{ content.url }}</a>
+                </p>
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <pre class="text-sm overflow-auto max-h-96">{{ content.html_content }}</pre>
+                    <a href="{{ MEDIA_URL }}{{ content.html_file_path }}" 
+                       class="mt-2 inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800"
+                       download>
+                        <i class="fas fa-download mr-1"></i> Download Full HTML
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center text-gray-500">No content has been scraped yet.</p>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="mt-6 flex justify-center">
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Previous</a>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    <a href="?page={{ num }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium {% if page_obj.number == num %}text-indigo-600 bg-indigo-50{% else %}text-gray-500 hover:bg-gray-50{% endif %}">{{ num }}</a>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Next</a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
